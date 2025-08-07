@@ -1,0 +1,7 @@
+{
+    "python.testing.pytestArgs": [
+        "sam-python-learning"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
+}
