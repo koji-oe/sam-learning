@@ -8,6 +8,13 @@
 		"ghcr.io/devcontainers/features/aws-cli:1": {},
 		"ghcr.io/devcontainers/features/docker-in-docker:2": {},
 		"ghcr.io/audacioustux/devcontainers/aws-sam-cli:1": {}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"yzhang.markdown-all-in-one"
+			]
+		}
 	}
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
