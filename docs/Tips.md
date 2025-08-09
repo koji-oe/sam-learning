@@ -6,6 +6,7 @@
 - [モジュールのオフライン展開](#モジュールのオフライン展開)
 - [SAMテンプレートにおけるyamlタグエラー対策](#samテンプレートにおけるyamlタグエラー対策)
 - [ローカルのAPI起動時に環境変数を設定する方法](#ローカルのapi起動時に環境変数を設定する方法)
+- [ローカルのAPI起動のコンテナイメージpullに失敗する場合](#ローカルのapi起動のコンテナイメージpullに失敗する場合)
 
 ## 取得した依存関係が解決できない場合
 
@@ -137,4 +138,18 @@ AuthFunction:
         Variables:
             JWT_SECRET_ARN: !Ref JwtSecret
             JWT_SECRET:
+```
+
+## ローカルのAPI起動のコンテナイメージpullに失敗する場合
+
+dev-containers内でdockerの認証がうまくいかないことが原因の可能性がある。  
+その場合以下の内容でdev-containers内の`~/.docker/config.json`を編集することで解消することがある。
+
+```shell
+echo '{' > ~/.docker/config.json
+echo '  "auths": {},' >> ~/.docker/config.json
+echo '  "HttpHeaders": {' >> ~/.docker/config.json
+echo '    "User-Agent": "Docker-Client/20.10.24 (linux)"' >> ~/.docker/config.json
+echo '  }' >> ~/.docker/config.json
+echo '}' >> ~/.docker/config.json
 ```
