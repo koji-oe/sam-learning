@@ -3,6 +3,7 @@
 
 - [取得した依存関係が解決できない場合](#取得した依存関係が解決できない場合)
 - [取得したモジュールの格納場所の確認方法](#取得したモジュールの格納場所の確認方法)
+- [モジュールのオフライン展開](#モジュールのオフライン展開)
 
 ## 取得した依存関係が解決できない場合
 
@@ -38,3 +39,21 @@ Location: /home/vscode/.local/lib/python3.12/site-packages
 Requires: iniconfig, packaging, pluggy, pygments
 Required-by: 
 ```
+
+## モジュールのオフライン展開
+
+pipでインストールしたモジュールをオフライン環境に持ち込み、依存解決するには以下手順を実施するとよい。
+
+1. オンライン環境で依存関係をアーカイブする。  
+    以下により`./packages`に`.whl`や`.tar.gz`が保存される。
+
+    ```shell
+    pip download -r requirements.txt -d ./packages
+    ```
+
+2. オフライン環境に`packages`、`requirements.txt`を持ち込む。
+3. オフライン環境にてネットワークアクセスなしでインストールする。
+
+    ```shell
+    pip install --no-index --find-links=./packages -r requirements.txt
+    ```
