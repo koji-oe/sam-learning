@@ -33,7 +33,7 @@ def verify_jwt(token):
 
 def lambda_handler(event, context):
     # Authorizationヘッダ: "Bearer <token>"
-    auth = event.get("headers", {}).get("authorization", "")
+    auth = event.get("headers", {}).get("Authorization", "")
     if not auth.startswith("Bearer "):
         return {"statusCode": 401, "body": json.dumps({"message": "missing token"})}
     token = auth.split(" ", 1)[1]
