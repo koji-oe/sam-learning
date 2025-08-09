@@ -5,6 +5,7 @@
 - [取得したモジュールの格納場所の確認方法](#取得したモジュールの格納場所の確認方法)
 - [モジュールのオフライン展開](#モジュールのオフライン展開)
 - [SAMテンプレートにおけるyamlタグエラー対策](#samテンプレートにおけるyamlタグエラー対策)
+- [ローカルのAPI起動時に環境変数を設定する方法](#ローカルのapi起動時に環境変数を設定する方法)
 
 ## 取得した依存関係が解決できない場合
 
@@ -94,4 +95,46 @@ vscodeのデフォルト設定では、`!Ref`等のSAMテンプレートのCloud
     "!Transform mapping",
     "!Ref"
 ]
+```
+
+## ローカルのAPI起動時に環境変数を設定する方法
+
+作成したAPIをローカルで起動する際には以下を実行する。  
+これによりローカルコンテナでLambdaが動作する。
+
+```shell
+sam local start-api --port 3000
+```
+
+コンテナに環境変数を設定する際は、以下のように`--env-vars`パラメータで環境変数ファイルを設定するとよい。
+
+```shell
+sam local start-api --port 3000 --env-vars env/env.json
+```
+
+以下のように、template.yamlにて定義したResource名とEnvironment名と合わせる必要がある。
+
+`env.json`
+
+```json
+{
+    "AuthFunction": {
+        "JWT_SECRET": "dev-secret"
+    }
+}
+```
+
+`template.yaml`
+
+```yaml
+# 認証用のLambda関数
+AuthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+        CodeUri: src/auth/
+        Handler: app.lambda_handler
+        Environment:
+        Variables:
+            JWT_SECRET_ARN: !Ref JwtSecret
+            JWT_SECRET:
 ```
