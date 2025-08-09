@@ -1,7 +1,35 @@
 {
+    // ----------------------------------------------------------------------------------
+    // python
     "python.testing.pytestArgs": [
         "sam-python-learning"
     ],
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    // ----------------------------------------------------------------------------------
+    // yaml
+    // samテンプレート用のカスタム定義
+    "yaml.customTags": [
+        "!Base64",
+        "!Base64 mapping",
+        "!Cidr sequence",
+        "!And sequence",
+        "!Equals sequence",
+        "!If sequence",
+        "!Not sequence",
+        "!Or sequence",
+        "!Condition",
+        "!FindInMap sequence",
+        "!GetAtt",
+        "!GetAtt sequence",
+        "!GetAZs",
+        "!ImportValue",
+        "!Join sequence",
+        "!Select sequence",
+        "!Split sequence",
+        "!Sub",
+        "!Sub sequence",
+        "!Transform mapping",
+        "!Ref"
+    ]
 }
