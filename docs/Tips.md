@@ -8,6 +8,8 @@
 - [ローカルのAPI起動時に環境変数を設定する方法](#ローカルのapi起動時に環境変数を設定する方法)
 - [ローカルのAPI起動のコンテナイメージpullに失敗する場合](#ローカルのapi起動のコンテナイメージpullに失敗する場合)
 - [Lambdaレイヤーのパス解決](#lambdaレイヤーのパス解決)
+- [`sam local start-api`実行時の接続エラー解消](#sam-local-start-api実行時の接続エラー解消)
+- [Aurora DSQLにおけるトランザクション制約対策](#aurora-dsqlにおけるトランザクション制約対策)
 
 ## 取得した依存関係が解決できない場合
 
@@ -187,3 +189,96 @@ vscodeによるローカル開発時とLambdaデプロイ時のパス解決方�
 ```
 
 Lambdaデプロイ時の動作では、LambdaにLayerをアタッチすると、実行環境ではそのLayerの中の`python/`ディレクトリが自動的に`sys.path`に追加される。
+
+## `sam local start-api`実行時の接続エラー解消
+
+`sam local start-api`によるローカルコンテナでのLambda実行にて、Aurora DSQL接続を検証するとDB接続エラーになることがある。
+
+```txt
+Invalid lambda response received: Invalid API Gateway Response Keys: {'errorType', 'requestId', 'errorMessage', 'stackTrace'} in {'errorMessage': 'connection is bad: connection to server at          
+"2406:da14:1713:ba03:1755:b00b:6b7c:39c7", port 5432 failed: Network is unreachable\n\tIs the server running on that host and accepting TCP/IP connections?\nMultiple connection attempts failed. All  
+failures were:\n- host: \'lyabujqnync4f2ifscd5rt4utu.dsql.ap-northeast-1.on.aws\', port: None, hostaddr: \'18.99.75.128\': connection failed: connection to server at "18.99.75.128", port 5432 failed:
+FATAL:  unable to accept connection, access denied\nDETAIL:  Session Id: hrtcjl3zfmhx6gn4gr22mtatm4\nHINT:  The security token included in the request is invalid.\n- host:                            
+\'lyabujqnync4f2ifscd5rt4utu.dsql.ap-northeast-1.on.aws\', port: None, hostaddr: \'2406:da14:1713:ba03:1755:b00b:6b7c:39c7\': connection is bad: connection to server at                               
+"2406:da14:1713:ba03:1755:b00b:6b7c:39c7", port 5432 failed: Network is unreachable\n\tIs the server running on that host and accepting TCP/IP connections?', 'errorType': 'OperationalError',         
+'requestId': 'fc6c4fc5-98fb-4ae1-a3af-2f1e9df19d7b', 'stackTrace': ['  File "/var/task/app.py", line 15, in lambda_handler\n    conn = psycopg.connect(\n', '  File "/var/task/psycopg/connection.py", 
+line 125, in connect\n    raise type(last_ex)("\\n".join(lines)).with_traceback(None)\n']}                                                                                                             
+2025-08-10 06:49:36 127.0.0.1 - - [10/Aug/2025 06:49:36] "POST /dsql/init HTTP/1.1" 502 -
+```
+
+上記エラーの場合、IPv6で接続を試みており、コンテナ内にIPv6ルートがないために接続エラーとなっている可能性が高い。  
+この場合は、実行時のコマンドにオプションを付与してホストネットワークで動かすことで解消する。
+
+```shell
+sam local start-api --env-vars env/env.json --docker-network host
+```
+
+## Aurora DSQLにおけるトランザクション制約対策
+
+Aurora DSQLでは1トランザクションで3000行までしか追加、削除、更新ができない。  
+これに対する対策として、`limit`句や`returning`句を用いた対処法がある。
+
+以下のように`limit`句を用いて1トランザクションにおける更新レコード数を制限し、`returning`句を用いて更新対象データの情報を取得することで削除件数が0となるまでトランザクションを分割して処理をクエリ返す。
+
+```python
+batch_size = 3000
+total_deleted = 0
+
+while True:
+    cur.execute(
+        """
+        delete from users
+        where id in (
+            select id from users
+            order by created_datetime
+            limit %s
+        )
+        returning id
+        """, (batch_size,)
+    )
+    deleted_rows = cur.fetchall()
+    if not deleted_rows:
+        break
+    total_deleted += len(deleted_rows)
+```
+
+尚、Deleteの場合は上記の通り繰り返すことでいつか0件になると考えられるが、Updateの場合は更新範囲をずらしながら処理する必要がある。  
+`offset`句を用いることもできるがパフォーマンスが低いため、`returning`句で主キーを利用した更新方式の方が推奨される。
+
+```python
+batch_size = 500
+last_max_id = None
+total_updated = 0
+
+while True:
+    if last_max_id:
+        cur.execute(
+            """
+            UPDATE users
+            SET password = 'newpassword'
+            WHERE id > %s
+            ORDER BY id
+            LIMIT %s
+            RETURNING id
+            """,
+            (last_max_id, batch_size)
+        )
+    else:
+        # 初回はlast_max_idなし
+        cur.execute(
+            """
+            UPDATE users
+            SET password = 'newpassword'
+            ORDER BY id
+            LIMIT %s
+            RETURNING id
+            """,
+            (batch_size,)
+        )
+    updated_rows = cur.fetchall()
+    if not updated_rows:
+        break
+
+    last_max_id = max(row[0] for row in updated_rows)
+    total_updated += len(updated_rows)
+```

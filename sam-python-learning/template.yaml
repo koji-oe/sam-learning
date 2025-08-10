@@ -97,6 +97,20 @@ Resources:
             Path: /users/{id}
             Method: get
 
+  # DSQL初期化用のLambda関数
+  DsqlInitFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/dsql_init/
+      Handler: app.lambda_handler
+      Timeout: 60
+      Events:
+        AuthApi:
+          Type: Api
+          Properties:
+            Path: /dsql/init
+            Method: post
+
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
