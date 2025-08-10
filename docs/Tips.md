@@ -7,6 +7,7 @@
 - [SAMテンプレートにおけるyamlタグエラー対策](#samテンプレートにおけるyamlタグエラー対策)
 - [ローカルのAPI起動時に環境変数を設定する方法](#ローカルのapi起動時に環境変数を設定する方法)
 - [ローカルのAPI起動のコンテナイメージpullに失敗する場合](#ローカルのapi起動のコンテナイメージpullに失敗する場合)
+- [Lambdaレイヤーのパス解決](#lambdaレイヤーのパス解決)
 
 ## 取得した依存関係が解決できない場合
 
@@ -153,3 +154,36 @@ echo '    "User-Agent": "Docker-Client/20.10.24 (linux)"' >> ~/.docker/config.js
 echo '  }' >> ~/.docker/config.json
 echo '}' >> ~/.docker/config.json
 ```
+
+## Lambdaレイヤーのパス解決
+
+Lambdaでは共通モジュールをレイヤーに切り出すことで、共通処理の一元管理やデプロイサイズの抑制が可能となる。  
+vscodeによるローカル開発時とLambdaデプロイ時のパス解決方法について記載する。
+
+現在以下の構成で、`layers/{レイヤー}/python/モジュール`といった構成でレイヤー資材を管理している。
+
+```txt
+.
+├── layers
+│   └── auth_layer
+│       ├── python
+│       │   └── auth_middleware.py
+│       └── requirements.txt
+└── src
+    ├── auth
+    │   ├── app.py
+    │   └── requirements.txt
+    └── users
+        ├── app.py
+        └── requirements.txt
+```
+
+ローカル開発時には、`lambda_handler`の配置先である`src/{Lambda関数}/モジュール`より`layer`配下のモジュールを解決するために、`.vscode/settings.json` にて以下の設定を追加している。
+
+```json
+"python.analysis.extraPaths": [
+    "./sam-python-learning/layers/auth_layer/python"
+],
+```
+
+Lambdaデプロイ時の動作では、LambdaにLayerをアタッチすると、実行環境ではそのLayerの中の`python/`ディレクトリが自動的に`sys.path`に追加される。
