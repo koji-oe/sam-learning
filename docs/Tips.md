@@ -246,7 +246,7 @@ while True:
 `offset`句を用いることもできるがパフォーマンスが低いため、`returning`句で主キーを利用した更新方式の方が推奨される。
 
 ```python
-batch_size = 500
+batch_size = 3000
 last_max_id = None
 total_updated = 0
 
@@ -254,12 +254,15 @@ while True:
     if last_max_id:
         cur.execute(
             """
-            UPDATE users
-            SET password = 'newpassword'
-            WHERE id > %s
-            ORDER BY id
-            LIMIT %s
-            RETURNING id
+            update users
+            set password = 'newpassword'
+            where id in (
+                select id from users
+                where id > %s
+                order by id
+                limit %s
+            )
+            returning id
             """,
             (last_max_id, batch_size)
         )
@@ -267,11 +270,14 @@ while True:
         # 初回はlast_max_idなし
         cur.execute(
             """
-            UPDATE users
-            SET password = 'newpassword'
-            ORDER BY id
-            LIMIT %s
-            RETURNING id
+            update users
+            set password = 'newpassword'
+            where id in (
+                select id from users
+                order by id
+                limit %s
+            )
+            returning id
             """,
             (batch_size,)
         )

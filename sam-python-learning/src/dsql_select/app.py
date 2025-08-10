@@ -22,23 +22,24 @@ def lambda_handler(event, context):
     )
 
     cur = conn.cursor()
-    cur.execute(
-        """
-        drop table if exists users
-        """)
 
     cur.execute(
         """
-        create table if not exists users (
-            id uuid not null default gen_random_uuid(),
-            username varchar(50) not null,
-            password varchar(255) not null,
-            created_datetime timestamp default current_timestamp,
-            primary key (id)
-        )
-        """)
+        select count(*) from users
+        """
+    )
+    row = cur.fetchone()
+    print(f"Inserted row count: {row}")
+
+    cur.execute(
+        """
+        select * from users
+        """
+    )
+    row = cur.fetchall()
+    print(f"Selected rows: {row}")
 
     return {
         "statusCode": 200,
-        "body": json.dumps({"message": "Database initialized successfully"})
+        "body": json.dumps({"message": "Database selected successfully"})
     }

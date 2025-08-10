@@ -22,23 +22,30 @@ def lambda_handler(event, context):
     )
 
     cur = conn.cursor()
-    cur.execute(
-        """
-        drop table if exists users
-        """)
 
-    cur.execute(
-        """
-        create table if not exists users (
-            id uuid not null default gen_random_uuid(),
-            username varchar(50) not null,
-            password varchar(255) not null,
-            created_datetime timestamp default current_timestamp,
-            primary key (id)
+    batch_size = 3000
+    total_deleted = 0
+
+    while True:
+        cur.execute(
+            """
+            delete from users
+            where id in (
+                select id from users
+                order by created_datetime
+                limit %s
+            )
+            returning id
+            """, (batch_size,)
         )
-        """)
+        deleted_rows = cur.fetchall()
+        if not deleted_rows:
+            break
+        total_deleted += len(deleted_rows)
+        print(
+            f"Deleted {len(deleted_rows)} rows, total deleted: {total_deleted}")
 
     return {
         "statusCode": 200,
-        "body": json.dumps({"message": "Database initialized successfully"})
+        "body": json.dumps({"message": "Database deleted successfully"})
     }

@@ -111,6 +111,62 @@ Resources:
             Path: /dsql/init
             Method: post
 
+  # DSQL登録用のLambda関数
+  DsqlInsertFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/dsql_insert/
+      Handler: app.lambda_handler
+      Timeout: 60
+      Events:
+        AuthApi:
+          Type: Api
+          Properties:
+            Path: /dsql/insert
+            Method: post
+
+  # DSQL削除用のLambda関数
+  DsqlDeleteFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/dsql_delete/
+      Handler: app.lambda_handler
+      Timeout: 60
+      Events:
+        AuthApi:
+          Type: Api
+          Properties:
+            Path: /dsql/delete
+            Method: delete
+
+  # DSQL検索用のLambda関数
+  DsqlSelectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/dsql_select/
+      Handler: app.lambda_handler
+      Timeout: 60
+      Events:
+        AuthApi:
+          Type: Api
+          Properties:
+            Path: /dsql/select
+            Method: get
+
+  # DSQL更新用のLambda関数
+  DsqlUpdateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/dsql_update/
+      Handler: app.lambda_handler
+      Timeout: 60
+      Events:
+        AuthApi:
+          Type: Api
+          Properties:
+            Path: /dsql/update
+            Method: put
+
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
