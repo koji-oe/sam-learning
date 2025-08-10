@@ -17,6 +17,16 @@ Globals:
     LoggingConfig:
       LogFormat: JSON
 Resources:
+  # 認可レイヤー
+  AuthLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: auth-layer
+      ContentUri: layers/auth_layer/
+      CompatibleRuntimes:
+        - python3.12
+      RetentionPolicy: Retain
+
   # テンプレート関数
   HelloWorldFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -67,6 +77,8 @@ Resources:
     Properties:
       CodeUri: src/users/
       Handler: app.lambda_handler
+      Layers:
+        - !Ref AuthLayer
       Environment:
         Variables:
           JWT_SECRET_ARN: !Ref JwtSecret

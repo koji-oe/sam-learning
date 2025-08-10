@@ -4,6 +4,9 @@
     "python.testing.pytestArgs": [
         "sam-python-learning"
     ],
+    "python.analysis.extraPaths": [
+        "./sam-python-learning/layers/auth_layer/python"
+    ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
     // ----------------------------------------------------------------------------------
@@ -31,5 +34,5 @@
         "!Sub sequence",
         "!Transform mapping",
         "!Ref"
-    ]
+    ],
 }
