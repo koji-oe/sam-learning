@@ -1,42 +1,33 @@
-import psycopg
-import boto3
+import os
 import json
+from db_connection import DBConnection
+from sql_executor import SqlExecutor
+
+
+REGION = os.environ['REGION']
+CLUSTER_ENDPOINT = os.environ['CLUSTER_ENDPOINT']
 
 
 def lambda_handler(event, context):
-    region = 'ap-northeast-1'
-    cluster_endpoint = 'xeabujrmkotnpo753srtuty27q.dsql.ap-northeast-1.on.aws'
 
-    client = boto3.client('dsql', region_name=region)
-    password_token = client.generate_db_connect_admin_auth_token(
-        cluster_endpoint, region)
+    with DBConnection(REGION, CLUSTER_ENDPOINT) as conn:
+        executor = SqlExecutor(conn)
 
-    # Make a connection to the cluster
-    conn = psycopg.connect(
-        dbname='postgres',
-        user='admin',
-        host=cluster_endpoint,
-        password=password_token,
-        sslmode='require',
-        autocommit=True
-    )
+        executor.execute(
+            """
+            drop table if exists users
+            """)
 
-    cur = conn.cursor()
-    cur.execute(
-        """
-        drop table if exists users
-        """)
-
-    cur.execute(
-        """
-        create table if not exists users (
-            id uuid not null default gen_random_uuid(),
-            username varchar(50) not null,
-            password varchar(255) not null,
-            created_datetime timestamp default current_timestamp,
-            primary key (id)
-        )
-        """)
+        executor.execute(
+            """
+            create table if not exists users (
+                id uuid not null default gen_random_uuid(),
+                username varchar(50) not null,
+                password varchar(255) not null,
+                created_datetime timestamp default current_timestamp,
+                primary key (id)
+            )
+            """)
 
     return {
         "statusCode": 200,
